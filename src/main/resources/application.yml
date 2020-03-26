@@ -1,0 +1,15 @@
+server:
+  port: 8989
+  servlet:
+    context-path: /
+
+#数据源配置
+spring:
+  profiles:
+    active: dev   #使用的配置文件是开发环境的
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  jmx:
+    default-domain: CodeDoMain

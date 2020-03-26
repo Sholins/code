@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>java资源分享</title>
+    <link rel="shortcut icon" href="/static/foreground/images/logomin.png" type="image/x-icon"/>
+    <link rel="stylesheet" href="/static/foreground/layui/css/layui.css"/>
+    <link rel="stylesheet" href="/static/foreground/css/global.css"/>
+    <script src="/static/js/jquery-1.8.3.min.js"></script>
+    <script src="/static/layui/layui.js"></script>
+    <script src="/static/js/index.js"></script>
+</head>
+<body>
+<div th:replace="common/header::#h"></div>
+<div class="fly-panel fly-column" style="height: auto;">
+    <div class="layui-container">
+        <ul class="layui-clear" th:utext="${arcTypeStr}"></ul>
+    </div>
+</div>
+<div class="layui-container">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-md8">
+            <div class="fly-panel detail-box">
+                <h1 th:text="${article.name}"></h1>
+                <div class="fly-detail-info">
+                    <span th:if="${article.hot==true}" class="layui-badge layui-bg-red">热门</span>
+                    <span class="layui-badge layui-bg-green fly-detail-column" th:text="${#dates.format(article.publishDate,'yyyy-MM-dd')}">发布时间</span>
+                    <span class="layui-badge layui-bg-black" th:text="${article.arcType.getArcTypeName()}">资源类别</span>
+                    <span th:if="${article.free==true}" class="layui-badge layui-bg-black">免费资源</span>
+                    <span class="fly-list-nums"><i class="iconfont" title="点击">&#xe60b;</i><span th:text="${article.click}"></span> </span>
+                </div>
+                <div class="detail-about">
+                    <a class="fly-avatar">
+                        <img th:src="'/static/img/'+${article.user.headPortrait}" th:alt="${article.user.nickname}">
+                    </a>
+                    <div th:if="${article.useful == true}" style="float:right;" class="layui-hide-xs">
+                        <button class="layui-btn layui-btn-radius layui-btn-warm" onclick="download()">&nbsp;&nbsp;立即下载&nbsp;&nbsp;</button>
+                        <button class="layui-btn layui-btn-radius" style="background-color:red;" onclick="vipDownload()">&nbsp;&nbsp;VIP免积分下载&nbsp;&nbsp;</button>
+                    </div>
+                    <div th:if="${article.useful == false}" style="float:right;" class="layui-hide-xs">
+                        <font color="red">该资源链接已失效，暂时无法提供下载。</font>
+                    </div>
+                    <div class="fly-detail-user">
+                        <a class="fly-link">
+                            <cite th:text="${article.user.nickname}">作者</cite>
+                            <i th:if="${article.user.vip == true}" class="iconfont icon-renzheng" title="会员认证"></i>
+                            <i th:if="${article.user.vip == true}" class="layui-badge fly-badge-vip" th:text="'VIP'+${article.user.vipGrade}">VIP</i>
+                        </a>
+                        <span th:text="${#dates.format(article.publishDate,'yyyy-MM-dd HH:mm')}" ></span>
+                        <div class="detail-hits">
+                            <span style="padding-right:10px; color:#FF7200" th:text="'所需：' + ${article.points} + '积分'"></span>
+                        </div>
+                    </div>
+                    <div class="detail-body photos" th:utext="${article.content}"></div>
+                </div>
+            </div>
+            <div class="fly-panel detail-box" id="flyReply">
+                <fieldset class="layui-elem-field layui-field-title" style="text-align: center;"><legend>评论</legend></fieldset>
+                <div class="layui-form layui-form-pane">
+                    <form method="post">
+                        <div class="layui-form-item layui-form-text">
+                            <div class="layui-input-block">
+                                <textarea id="L_content" name="content" placeholder="请输入内容" class="layui-textarea fly-editor"></textarea>
+                            </div>
+                        </div>
+                        <div class="layui-form-item">
+                            <button class="layui-btn" lay-filter="addComment" lay-submit>提交评论</button>
+                        </div>
+                    </form>
+                </div>
+                <ul class="jieda" id="jieda"></ul>
+            </div>
+        </div>
+
+        <div class="layui-col-md4">
+            <div class="fly-panel">
+                <form class="layui-form" action="/article/search">
+                    <input type="text" style="width: 80%;display: inline;" th:value="${keywords}" id="keywords" name="keywords" lay-filter="searchInput"
+                           lay-verify="required" required placeholder="输入关键词搜索" autocomplete="off" class="layui-input">
+                    <button class="layui-btn layui-btn-warm layui-btn-radius layui-btn-sm" lay-submit=""><i class="layui-icon">&#xe615;</i>搜索</button>
+                </form>
+            </div>
+            <div class="fly-panel">
+                <h3 class="fly-panel-title">下载排行</h3>
+                <ul class="fly-panel-main fly-list-static">
+                    <li th:each="article :${application.clickArticle}">
+                        <a th:href="@{'/article/detail/'+${article.articleId}+'.html'}" target="_blank" th:text="${article.name}"></a>
+                    </li>
+                </ul>
+            </div>
+            <dl class="fly-panel fly-list-one">
+                <dt class="fly-panel-title">最新排行</dt>
+                <dd th:each="article :${application.newArticle}">
+                    <a th:href="@{'/article/detail/'+${article.articleId}+'.html'}" target="_blank" th:text="${article.name}"></a>
+                    <span><i class="iconfont" title="人气">&#xe60b;</i><span th:text="${article.click}"></span></span>
+                </dd>
+                </dd>
+            </dl>
+            <dl class="fly-panel fly-list-one">
+                <dt class="fly-panel-title">热搜排行</dt>
+                <dd th:each="article :${application.randomArticle}">
+                    <a th:href="@{'/article/detail/'+${article.articleId}+'.html'}" target="_blank" th:text="${article.name}"></a>
+                    <span><i class="iconfont" title="人气">&#xe60b;</i><span th:text="${article.click}"></span></span>
+
+                </dd>
+            </dl>
+            <div class="fly-panel fly-link">
+                <dt class="fly-panel-title">友情链接</dt>
+                <dl class="fly-panel-main">
+                    <dd th:each="link :${application.linknList}">
+                        <a th:href="@{${link.linkUrl}}" target="_blank" th:text="${link.linkName}"></a>
+                    </dd>
+                    <a href="http://wpa.qq.com/msgrd?v=3&uin=1255879874&site=qq&menu=yes" class="fly-link">申请友情链接</a>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    layui.use(['flow','layedit','form'],function () {
+        var flow = layui.flow,layedit = layui.layedit,form = layui.form,$ = layui.jquery;
+        //构架你一个自定义编辑器
+        var index = layedit.build("L_content",{
+            height:150,      //设置编辑器高度
+            tool:['strong',     //加粗
+                'italic',    //斜体
+                'underline',//下划线
+                'del',      //删除线
+                '|',        //分割线
+                'left',     //左对齐
+                'center',   //居中对其
+                'right',    //右对齐
+                'link',     //超链接
+                'unlink',   //清除链接
+                'face'      //表情
+            ]
+        });
+        form.on('submit(addComment)',function (data) {
+            if([[${session.currentUser}]]==null){
+                layer.msg("登录后才能评论！");
+                return false;
+            }
+            //判断是否是作者  如果不是作者
+            if([[${session.currentUser.userId}]]!=[[${article.user.userId}]]){
+                //判断是否下载过
+                $.post("/user/userDownloadExits",{"articleId":[[${article.articleId}]]},function (result) {
+                    if(result) {         //下载过
+                        var content = $.trim(layedit.getText(index));
+                        if(content==''){
+                            layer.msg("请输入评论信息！");
+                            return false;
+                        }
+                        $.post("/comment/add",{"article.articleId":[[${article.articleId}]],"content":content},function (result) {
+                            if(result.success){
+                                layer.msg("评论成功，审核后显示！", {
+                                    icon: 1,
+                                    time: 1000
+                                },function () {
+                                    layedit.setContent(index,'');
+                                });
+                            }
+                        },"json");
+                    }else{
+                        layer.msg("下载资源后才能评论！");
+                        return false;
+                    }
+                });
+            }else{  // 如果是作者
+                var content = $.trim(layedit.getText(index));
+                if(content==''){
+                    layer.msg("请输入评论信息！");
+                    return false;
+                }
+                $.post("/user/addComment",{"article.articleId":[[${article.articleId}]],"content":content},function (result) {
+                    if(result.success){
+                        layer.msg("评论成功，刷新后显示！", {
+                            icon: 1,
+                            time: 1000
+                        },function () {
+                            layedit.setContent(index,'');
+                        });
+                    }
+                },"json");
+            }
+            return false;       //不会跳转到下一个页面
+        });
+
+        //显示评论信息
+        flow.load({
+           elem:"#jieda"                //流加载容器
+            ,done:function(page,next){      //执行下一页的回调
+               setTimeout(function () {
+                   $.post("/comment/list",{"page":page,"article.articleId":[[${article.articleId}]]},function (res) {
+                        //执行下一页渲染，第二个参数为满足"加载更多"的条件 即后面有分页
+                        //res.total为ajax返回的总页数
+                       next(res.data,page<res.total);
+                   },"json");
+               },500);
+            }
+
+        });
+    });
+
+    //立即下载
+    function download() {
+        //判断是否登录
+        if([[${session.currentUser}]] == null){
+            layer.msg("登录后才能下载资源，请登录");
+            return;
+        }
+        //判断当前用户是否是作者  如果不是作者
+        if([[${session.currentUser.userId}]]!=[[${article.user.userId}]]){
+            //判断是否下载过
+            $.post("/user/userDownloadExits",{"articleId":[[${article.articleId}]]},function(result) {
+                if (result) {                      //下载过
+                    layer.confirm("您下载过该资源，如需重新下载不会扣去积分，可直接下载！", {
+                        title: '下载提示',
+                        btn: ['下载', '取消']
+                    }, function () {
+                        layer.closeAll('dialog');
+                        layer.open({
+                            type: 2,
+                            title: '资源下载页面',
+                            shadeClose: true,
+                            shade: 0.8,
+                            area: ['480px', '200px'],
+                            content: '/user/userDownloadPage/[[${article.articleId}]]'
+                        });
+                    }, function () {
+                    })
+                } else {                          //未下载过
+                    //判断是否为免费资源
+                    $.post("/article/isFree", {"articleId": [[${article.articleId}]]}, function (result) {
+                        if (result) {             //免费资源
+                            layer.confirm("该资源为<font color='red'>免费资源</font>，可直接下载！", {
+                                title: '下载提示',
+                                btn: ['下载', '取消']
+                            }, function () {
+                                layer.closeAll('dialog');
+                                layer.open({
+                                    type: 2,
+                                    title: '资源下载页面',
+                                    shadeClose: true,
+                                    shade: 0.8,
+                                    area: ['480px', '200px'],
+                                    content: '/user/userDownloadPage/[[${article.articleId}]]'
+                                });
+                            }, function () {
+                            })
+                        } else {                  //收费资源
+                            $.post("/user/userPoints", {"points": [[${article.points}]]}, function (result) {
+                                if (result) {
+                                    layer.confirm("该资源下载需要<font color='red'>[[${article.points}]]</font>积分，您确定要下载吗？", {
+                                        title: '下载提示',
+                                        btn: ['下载', '取消']
+                                    }, function () {
+                                        layer.closeAll('dialog');
+                                        layer.open({
+                                            type: 2,
+                                            title: '资源下载页面',
+                                            shadeClose: true,
+                                            shade: 0.8,
+                                            area: ['480px', '200px'],
+                                            content: '/user/userDownloadPage/[[${article.articleId}]]'
+                                        });
+                                    }, function () {
+
+                                    })
+                                } else {
+                                    layer.msg("您的积分已不足，不可下载该资源！");
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }else{
+            //如果是作者
+            layer.confirm("您是当前资源所有者，可直接下载！", {
+                title: '下载提示',
+                btn: ['下载', '取消']
+            }, function () {
+                layer.closeAll('dialog');
+                layer.open({
+                    type: 2,
+                    title: '资源下载页面',
+                    shadeClose: true,
+                    shade: 0.8,
+                    area: ['480px', '200px'],
+                    content: '/user/userDownloadPage/[[${article.articleId}]]'
+                });
+            }, function () {
+            })
+        }
+
+    }
+
+    //VIP免积分下载
+    function vipDownload() {
+        //判断是否登录
+        if ([[${session.currentUser}]] == null) {
+            layer.msg("登录后才能下载资源，请登录");
+            return;
+        }
+        //判断是否是vip
+        $.post("/user/isVIP", {}, function (result) {
+            if (result) {
+                layer.msg("尊敬的vip用户，欢迎使用vip通道下载");
+                //判断是否下载过
+                $.post("/user/userDownloadExits",{"articleId":[[${article.articleId}]]},function(result) {
+                    if (result) {                      //下载过
+                        layer.confirm("您下载过该资源，确定重新下载该资源吗？", {
+                            title: '下载提示',
+                            btn: ['下载', '取消']
+                        }, function () {
+                            layer.closeAll('dialog');
+                            layer.open({
+                                type: 2,
+                                title: '资源下载页面',
+                                shadeClose: true,
+                                shade: 0.8,
+                                area: ['480px', '200px'],
+                                content: '/user/userVipDownloadPage/[[${article.articleId}]]'
+                            });
+                        }, function () {
+
+                        });
+                    }else{
+                        layer.confirm("您确定要下载该资源吗？", {
+                            title: '下载提示',
+                            btn: ['下载', '取消']
+                        }, function () {
+                            layer.closeAll('dialog');
+                            layer.open({
+                                type: 2,
+                                title: '资源下载页面',
+                                shadeClose: true,
+                                shade: 0.8,
+                                area: ['480px', '200px'],
+                                content: '/user/userVipDownloadPage/[[${article.articleId}]]'
+                            });
+                        }, function () {
+
+                        });
+                    }
+                });
+            }else {
+                layer.msg("您目前不是vip用户，没有权限使用vip通道下载");
+            }
+        },"json");
+    }
+
+    /*]]>*/
+</script>
+</body>
+</html>
